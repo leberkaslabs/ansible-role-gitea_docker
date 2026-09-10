@@ -1,0 +1,18 @@
+{{ ansible_managed | ansible.builtin.comment }}
+---
+services:
+  server:
+    image: {{ gitea_docker_image }}
+    container_name: gitea
+    env_file: .env
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "100m"
+        max-file: "10"
+      driver: json-file
+    network_mode: host
+    volumes:
+      - {{ gitea_docker_path }}/data:/data:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro

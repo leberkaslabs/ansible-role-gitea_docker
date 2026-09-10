@@ -1,0 +1,20 @@
+---
+- name: Ensure UID/GID are not set in gitea_docker_env
+  ansible.builtin.assert:
+    that:
+      - "'USER_GID' not in gitea_docker_env"
+      - "'USER_UID' not in gitea_docker_env"
+    quiet: true
+    fail_msg: >-
+      USER_UID and USER_GID are managed by the playbook
+      and must not be set in gitea_docker_env.
+
+- name: Ensure Gitea user and group are not root
+  ansible.builtin.assert:
+    that:
+      - gitea_docker_group != "root"
+      - gitea_docker_group_gid is not defined or gitea_docker_group_gid != 0
+      - gitea_docker_owner != "root"
+      - gitea_docker_owner_uid is not defined or gitea_docker_owner_uid != 0
+    quiet: true
+    fail_msg: Gitea must not run as root.

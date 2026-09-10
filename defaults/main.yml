@@ -1,0 +1,19 @@
+---
+gitea_docker_image: gitea/gitea:latest
+
+gitea_docker_path: /opt/gitea
+# User/group that owns the deployment files and runs the container.
+# Must not be root (enforced by an assert in the role).
+gitea_docker_owner: gitea
+gitea_docker_group: gitea
+
+# Configure Gitea environment variables.
+# See https://docs.gitea.com/administration/config-cheat-sheet/
+# Note: USER_UID and USER_GID are managed by the role and must not be set here.
+gitea_docker_env:
+  HTTP_PORT: 3000
+  SSH_PORT: 2222
+
+# Extra docker compose config merged into the templated compose file.
+# Use this to add or override services, volumes, networks, etc.
+gitea_docker_compose_override: {}

@@ -1,0 +1,74 @@
+---
+- name: Validate Gitea variables
+  ansible.builtin.import_tasks: assert.yml
+  delegate_to: localhost
+  run_once: true
+
+- name: Ensure Gitea group exists
+  ansible.builtin.group:
+    name: "{{ gitea_docker_group }}"
+    gid: "{{ gitea_docker_group_gid | default(omit, true) }}"
+    state: present
+  register: gitea_docker_group_info
+
+- name: Ensure Gitea user exists
+  ansible.builtin.user:
+    name: "{{ gitea_docker_owner }}"
+    uid: "{{ gitea_docker_owner_uid | default(omit, true) }}"
+    group: "{{ gitea_docker_group }}"
+    shell: /sbin/nologin
+  register: gitea_docker_owner_info
+
+- name: Ensure Gitea directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ gitea_docker_owner }}"
+    group: "{{ gitea_docker_group }}"
+    state: directory
+    mode: "0750"
+  loop:
+    - "{{ gitea_docker_path }}"
+    - "{{ gitea_docker_path }}/data"
+
+- name: Manage Gitea docker compose environment
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ gitea_docker_path }}/.env"
+    owner: "{{ gitea_docker_owner }}"
+    group: "{{ gitea_docker_group }}"
+    mode: "0640"
+  notify: restart gitea
+
+- name: Manage Gitea docker compose configuration
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ gitea_docker_path }}/compose.yaml"
+    owner: "{{ gitea_docker_owner }}"
+    group: "{{ gitea_docker_group }}"
+    mode: "0640"
+  notify: restart gitea
+
+- name: Manage Gitea docker compose override configuration
+  ansible.builtin.template:
+    src: compose.override.yaml.j2
+    dest: "{{ gitea_docker_path }}/compose.override.yaml"
+    owner: "{{ gitea_docker_owner }}"
+    group: "{{ gitea_docker_group }}"
+    mode: "0640"
+  notify: restart gitea
+  when:
+    - gitea_docker_compose_override is defined
+    - gitea_docker_compose_override | length > 0
+
+- name: Validate Gitea compose configuration
+  ansible.builtin.command:
+    cmd: docker compose config --quiet
+    chdir: "{{ gitea_docker_path }}"
+  changed_when: false
+
+- name: Start Gitea compose deployment
+  ansible.builtin.command:
+    cmd: docker compose --ansi never --progress plain up --detach
+    chdir: "{{ gitea_docker_path }}"
+  register: gitea_docker_container
+  changed_when: "'Started' in gitea_docker_container.stdout"

@@ -1,0 +1,3 @@
+{{ ansible_managed | ansible.builtin.comment }}
+---
+{{ gitea_docker_compose_override | ansible.builtin.from_yaml | ansible.builtin.to_nice_yaml(indent=2) }}
